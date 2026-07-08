@@ -107,15 +107,17 @@ def load_config(path):
 
 def main():
     parser = argparse.ArgumentParser(description="Train sweet potato YOLO model")
-    parser.add_argument("--config",  required=True, help="Path to config YAML")
-    parser.add_argument("--name",    default=None,  help="Experiment name")
+    parser.add_argument("--config",  required=True,  help="Path to YAML config file")
+    parser.add_argument("--name",    default=None,   help="Run name (default: auto-timestamped)")
     parser.add_argument("--resume",  action="store_true")
-    parser.add_argument("--epochs",  type=int,   default=None)
-    parser.add_argument("--batch",   type=int,   default=None)
+    parser.add_argument("--batch",   type=int, default=None, help="Override batch size")
+    parser.add_argument("--epochs",  type=int, default=None, help="Override epoch count")
     parser.add_argument("--imgsz",   type=int,   default=None)
     parser.add_argument("--workers", type=int,   default=None)
+    parser.add_argument("--data",    default=None,
+                        help="Override data_yaml path (relative to project root or absolute)")
     parser.add_argument("--custom",  action="store_true",
-                        help="Use SweetPotatoYOLO (SPD + NIRDiff) architecture")
+                        help="Use SweetPotatoYOLO (SPD-Conv + NIRDiffFusion)")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -128,6 +130,14 @@ def main():
     data_yaml = cfg["data_yaml"]
     if not Path(data_yaml).is_absolute():
         cfg["data_yaml"] = str(PROJECT_ROOT / data_yaml)
+
+    # --data flag overrides whatever is in the config
+    if args.data:
+        override = Path(args.data)
+        if not override.is_absolute():
+            override = PROJECT_ROOT / override
+        cfg["data_yaml"] = str(override)
+        print(f"  [data override] {cfg['data_yaml']}")
 
     project = cfg.get("project", "runs")
     if not Path(project).is_absolute():
