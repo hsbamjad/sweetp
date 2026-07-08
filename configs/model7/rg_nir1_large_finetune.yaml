@@ -1,0 +1,56 @@
+# Model 7 — R+G+NIR1, Large model, fine-tuned from 2024 checkpoint
+# Starts from bestLNIR1_grade.pt (YOLOv8l-seg, ~88MB, trained by 2024 student on RGNIR1)
+# Uses updated_processed_data with all available annotations
+#
+# NOTE: Run prepare_dataset.py first to generate updated_processed_data:
+#   python scripts/prepare_dataset.py --output-dir updated_processed_data
+#
+# WARNING: Verify class order matches between this data.yaml and 2024 model:
+#   0=Normal, 1=Moderate defect, 2=Severe defect
+
+experiment_name: model7_rg_nir1_large_finetune
+model_base: 2024/DetectModels/RGNIR1/bestLNIR1_grade.pt
+model_size: l
+n_channels: 3
+nc: 3
+
+data_yaml: updated_processed_data/R_G_NIR1/data.yaml
+project:   runs
+
+# Training
+epochs: 150
+batch:  12
+imgsz:  640
+workers: 8
+
+# Fine-tune LR — lower than scratch training to preserve pretrained weights
+lr0:           0.001
+lrf:           0.01
+momentum:      0.937
+weight_decay:  0.0005
+warmup_epochs: 2.0
+
+# Loss
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+# Augmentation
+hsv_h:     0.015
+hsv_s:     0.7
+hsv_v:     0.4
+degrees:   15.0
+translate: 0.1
+scale:     0.5
+flipud:    0.5
+fliplr:    0.5
+mosaic:    1.0
+mixup:     0.1
+
+# Class imbalance
+copy_paste: 0.3
+
+dropout:      0.1
+close_mosaic: 10
+patience:     50
+save_period:  10
