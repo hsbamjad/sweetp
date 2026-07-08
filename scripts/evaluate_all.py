@@ -29,21 +29,24 @@ RUNS_DIR = r"runs"
 # Add / remove / comment out entries as needed.
 
 MODELS = [
-    # ── 2024-only models ──────────────────────────────────────────────────────
-    ("model3_2024only",      "processed_data_2024only/R_NIR1_NIR2/data.yaml"),
-    ("model5_2024only",      "processed_data_2024only/R_NIR1_NIR2/data.yaml"),
+    # ── R+NIR1+NIR2 models (NIRDiffFusion / SPD+NIRDiff) ─────────────────────
+    ("model3_2024only",                "updated_processed_data/R_NIR1_NIR2/data.yaml"),
+    ("model3_full",                    "updated_processed_data/R_NIR1_NIR2/data.yaml"),
+    ("model5_2024only",                "updated_processed_data/R_NIR1_NIR2/data.yaml"),
+    ("model5_full",                    "updated_processed_data/R_NIR1_NIR2/data.yaml"),
 
-    # ── Full data models (original processed_data) ───────────────────────────
-    ("model3_full",          "processed_data/R_NIR1_NIR2/data.yaml"),
-    ("model5_full",          "processed_data/R_NIR1_NIR2/data.yaml"),
+    # ── R+G+NIR1 models ───────────────────────────────────────────────────────
+    ("model6_rg_nir1",                 "updated_processed_data/R_G_NIR1/data.yaml"),
+    ("model6_rg_nir1_large_2026data",  "updated_processed_data/R_G_NIR1/data.yaml"),
+    ("model6_rg_nir1_updated",         "updated_processed_data/R_G_NIR1/data.yaml"),
+    ("model6_small_2026_finetune",     "updated_processed_data/R_G_NIR1/data.yaml"),
+    ("model7_large_finetune",          "updated_processed_data/R_G_NIR1/data.yaml"),
 
-    # ── R+G+NIR1 models (updated data) ───────────────────────────────────────
-    ("model6_rg_nir1",       "updated_processed_data/R_G_NIR1/data.yaml"),
-    ("model7_large_finetune","updated_processed_data/R_G_NIR1/data.yaml"),
+    # ── R+G+NIR2-norm models ──────────────────────────────────────────────────
+    ("model8_large_scratch",           "updated_processed_data/R_G_NIR2/data.yaml"),
+    ("model8_rg_nir2_norm_large_finetune", "updated_processed_data/R_G_NIR2/data.yaml"),
 
-    # ── R+G+NIR2-norm models (updated data) ──────────────────────────────────
-    ("model8_finetune",      "updated_processed_data/R_G_NIR2/data.yaml"),
-    ("model8b_scratch",      "updated_processed_data/R_G_NIR2/data.yaml"),
+    # NOTE: model6_small_2026_finetune_val is skipped — no weights, eval-only folder
 ]
 
 # Confidence threshold used during evaluation
