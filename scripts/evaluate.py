@@ -19,7 +19,7 @@ MODEL_PATH = r"runs/model6_rg_nir1/weights/best.pt"
 
 TEST_DATA  = r"updated_processed_data/R_G_NIR1/data.yaml"
 
-SPLIT      = "test"                 # "test" | "val" | "train"
+SPLIT      = "test"   # "test" | "val" | "train"  (NOT "valid" — use "val")
 
 RUN_NAME   = "eval_model6_test"     # output folder name under runs/
 
@@ -69,8 +69,15 @@ def main():
     sep()
     print(f"\n  Model : {MODEL_PATH}")
     print(f"  Data  : {TEST_DATA}")
-    note = "  ⚠  LOCKED — final paper numbers only" if SPLIT == "test" else ""
-    print(f"  Split : {SPLIT}{note}")
+    # ── validate + normalise split name ─────────────────────────────────────
+    split = SPLIT.strip().lower()
+    if split == "valid":
+        split = "val"   # YOLO uses "val" not "valid"
+    if split not in ("train", "val", "test"):
+        sys.exit(f'ERROR: SPLIT must be "train", "val", or "test" — got "{split}"')
+
+    note = "  ⚠  LOCKED — final paper numbers only" if split == "test" else ""
+    print(f"  Split : {split}{note}")
     print(f"  Output: runs/{RUN_NAME}\n")
 
     # ── load model ────────────────────────────────────────────────────────────
@@ -85,10 +92,10 @@ def main():
     model = YOLO(str(model_path))
 
     # ── run validation on test split ──────────────────────────────────────────
-    print("Running evaluation on test split …\n")
+    print(f"Running evaluation on {split} split …\n")
     results = model.val(
         data      = str(data_path),
-        split     = SPLIT,
+        split     = split,
         project   = "runs",
         name      = RUN_NAME,
         plots     = True,
