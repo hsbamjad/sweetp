@@ -82,12 +82,6 @@ class MultispectralYOLO:
             imgsz=imgsz,
             batch=batch,
             device=0 if torch.cuda.is_available() else "cpu",
-            workers=8,
-            patience=50,
-            save=True,
-            save_period=10,
-            verbose=True,
-            plots=True,
             **kwargs,
         )
         return results
