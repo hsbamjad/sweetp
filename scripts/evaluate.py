@@ -19,6 +19,8 @@ MODEL_PATH = r"runs/model6_rg_nir1/weights/best.pt"
 
 TEST_DATA  = r"updated_processed_data/R_G_NIR1/data.yaml"
 
+SPLIT      = "test"                 # "test" | "val" | "train"
+
 RUN_NAME   = "eval_model6_test"     # output folder name under runs/
 
 # ═══════════════════════════════════════════════════════════════
@@ -67,7 +69,8 @@ def main():
     sep()
     print(f"\n  Model : {MODEL_PATH}")
     print(f"  Data  : {TEST_DATA}")
-    print(f"  Split : test  (LOCKED — final paper numbers only)")
+    note = "  ⚠  LOCKED — final paper numbers only" if SPLIT == "test" else ""
+    print(f"  Split : {SPLIT}{note}")
     print(f"  Output: runs/{RUN_NAME}\n")
 
     # ── load model ────────────────────────────────────────────────────────────
@@ -85,7 +88,7 @@ def main():
     print("Running evaluation on test split …\n")
     results = model.val(
         data      = str(data_path),
-        split     = "test",
+        split     = SPLIT,
         project   = "runs",
         name      = RUN_NAME,
         plots     = True,
