@@ -113,7 +113,16 @@ def compose_input(rgb_path, nir1_path, nir2_path, band_combo):
         sys.exit(f"ERROR: cannot read RGB image → {rgb_path}")
     rgb = cv2.cvtColor(rgb_bgr, cv2.COLOR_BGR2RGB)
     R, G, B = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
-    print(f"    RGB size : {R.shape[1]}×{R.shape[0]}")
+    H, W = R.shape[0], R.shape[1]
+    print(f"    RGB array shape : {R.shape}  (H={H}, W={W})")
+
+    def force_resize(img, label="NIR"):
+        """Always resize img to (H, W) to match RGB — prints shape before/after."""
+        print(f"    {label} array shape : {img.shape}")
+        if img.shape[0] != H or img.shape[1] != W:
+            print(f"    Resizing {label} → ({H}, {W})")
+            img = cv2.resize(img, (W, H), interpolation=cv2.INTER_LINEAR)
+        return img
 
     if combo == "RGB":
         stack = np.stack([R, G, B], axis=-1)
@@ -121,20 +130,23 @@ def compose_input(rgb_path, nir1_path, nir2_path, band_combo):
     elif combo == "R_G_NIR1":
         if nir1_path is None:
             sys.exit("ERROR: NIR1_PATH is required for R_G_NIR1")
-        nir1 = match_size(load_gray(nir1_path), R.shape)
+        nir1 = force_resize(load_gray(nir1_path), "NIR1")
+        print(f"    Stacking shapes: R={R.shape} G={G.shape} NIR1={nir1.shape}")
         stack = np.stack([R, G, nir1], axis=-1)
 
     elif combo == "R_G_NIR2":
         if nir2_path is None:
             sys.exit("ERROR: NIR2_PATH is required for R_G_NIR2")
-        nir2 = match_size(load_gray(nir2_path, normalize=True), R.shape)
+        nir2 = force_resize(load_gray(nir2_path, normalize=True), "NIR2")
+        print(f"    Stacking shapes: R={R.shape} G={G.shape} NIR2={nir2.shape}")
         stack = np.stack([R, G, nir2], axis=-1)
 
     elif combo == "R_NIR1_NIR2":
         if nir1_path is None or nir2_path is None:
             sys.exit("ERROR: both NIR1_PATH and NIR2_PATH are required for R_NIR1_NIR2")
-        nir1 = match_size(load_gray(nir1_path), R.shape)
-        nir2 = match_size(load_gray(nir2_path, normalize=True), R.shape)
+        nir1 = force_resize(load_gray(nir1_path), "NIR1")
+        nir2 = force_resize(load_gray(nir2_path, normalize=True), "NIR2")
+        print(f"    Stacking shapes: R={R.shape} NIR1={nir1.shape} NIR2={nir2.shape}")
         stack = np.stack([R, nir1, nir2], axis=-1)
 
     else:
