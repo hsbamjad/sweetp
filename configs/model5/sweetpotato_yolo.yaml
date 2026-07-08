@@ -1,0 +1,45 @@
+# Model 5 — SweetPotatoYOLO (Full Proposed System)
+# SPD-Conv + NIRDiffFusion (4-channel: R, NIR1, NIR2, NIR1-NIR2 diff)
+# Requires: python models/train.py --config ... --name model5_full --custom
+experiment_name: model5_sweetpotato_yolo
+model_base: yolo26m-seg.pt
+model_size: m
+n_channels: 3    # NIRDiffFusion computes diff internally from R/NIR1/NIR2
+nc: 3
+
+data_yaml: S:/MSU_Research/sweetpotatoes/processed_data/R_NIR1_NIR2/data.yaml
+project:   S:/MSU_Research/sweetpotatoes/runs
+
+enable_spd:        true
+enable_nir_fusion: true
+alpha_init:        0.1
+
+epochs: 150
+batch:  16
+imgsz:  640
+workers: 8
+
+lr0:           0.005    # slightly lower LR for full architecture stability
+lrf:           0.01
+momentum:      0.937
+weight_decay:  0.0005
+warmup_epochs: 5.0      # longer warmup for complex architecture
+
+box: 7.5
+cls: 0.5
+dfl: 1.5
+dropout: 0.1            # slight dropout for 3-class to reduce overfitting
+
+hsv_h:     0.015
+hsv_s:     0.7
+hsv_v:     0.4
+degrees:   15.0
+translate: 0.1
+scale:     0.5
+flipud:    0.5
+fliplr:    0.5
+mosaic:    1.0
+mixup:     0.1          # mild mixup for harder 3-class boundaries
+
+# Class imbalance: copy_paste multiplies Severe defect instances
+copy_paste: 0.3

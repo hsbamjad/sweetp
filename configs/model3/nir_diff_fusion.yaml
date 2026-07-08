@@ -1,0 +1,45 @@
+# Model 3 — NIRDiffFusion
+# 4-channel input: R, NIR1, NIR2, NIR1-NIR2 difference
+# Requires --custom flag for the NIRDiffFusion module
+experiment_name: model3_nir_diff_fusion
+model_base: yolo26m-seg.pt
+model_size: m
+n_channels: 3    # NIRDiffFusion computes diff internally from R/NIR1/NIR2
+nc: 3
+
+data_yaml: S:/MSU_Research/sweetpotatoes/processed_data/R_NIR1_NIR2/data.yaml
+project:   S:/MSU_Research/sweetpotatoes/runs
+
+# Architecture flags (used by SweetPotatoYOLO / --custom)
+enable_spd:        false
+enable_nir_fusion: true
+alpha_init:        0.1
+
+epochs: 150
+batch:  16
+imgsz:  640
+workers: 8
+
+lr0:           0.01
+lrf:           0.01
+momentum:      0.937
+weight_decay:  0.0005
+warmup_epochs: 3.0
+
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+hsv_h:     0.015
+hsv_s:     0.7
+hsv_v:     0.4
+degrees:   10.0
+translate: 0.1
+scale:     0.5
+flipud:    0.5
+fliplr:    0.5
+mosaic:    1.0
+mixup:     0.0
+
+# Class imbalance: copy_paste multiplies Severe defect instances
+copy_paste: 0.3
