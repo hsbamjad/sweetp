@@ -121,17 +121,17 @@ def evaluate_model(run_name, data_yaml, out_root):
         print(f"  [SKIP] {run_name} — data.yaml not found: {data_path}")
         return None
 
-    # Pre-check for custom architecture weights (model3/model5 use custom_modules)
-    # These cannot be loaded without the original custom code — skip cleanly.
+    # Pre-check: scan raw bytes of the .pt zip for 'custom_modules'
+    # before YOLO() is called — prevents autoinstall spam entirely.
+    import zipfile
     try:
-        import torch
-        meta = torch.load(str(weights), map_location="cpu", weights_only=False)
-        reqs = meta.get("train_args", {}).get("requirements", []) if isinstance(meta, dict) else []
-        if any("custom" in str(r).lower() for r in reqs):
-            print(f"  [SKIP] {run_name} — requires custom_modules (non-standard architecture)")
-            return None
+        with zipfile.ZipFile(str(weights)) as zf:
+            for entry in zf.namelist():
+                if b"custom_modules" in zf.read(entry):
+                    print(f"  [SKIP] {run_name} — requires custom_modules (non-standard architecture)")
+                    return None
     except Exception:
-        pass   # if we can't inspect, just try loading normally
+        pass   # not a zip or unreadable — let YOLO handle it
 
     print(f"\n  Evaluating: {run_name}")
     print(f"    weights  : {weights}")
