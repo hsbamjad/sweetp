@@ -1,0 +1,117 @@
+# Model 9 — R+G+NIR1, YOLO26-Large, 1024px image size
+# Copy of rg_nir1_baseline.yaml adapted for Large model + higher resolution
+#
+# Key differences from baseline (model6):
+#   - model: yolo26l-seg.pt   (Large vs Medium)
+#   - imgsz: 1024             (vs 640)
+#   - iou:   0.7              (more permissive NMS during val)
+#   - data:  absolute path on Linux workstation
+#   - project/save_dir: absolute path on Linux workstation
+#
+# Run name on lab machine: yolo26l_ch1_1024_2
+
+experiment_name: model9_rg_nir1_large_1024
+model_base: yolo26l-seg.pt
+model_size: l
+n_channels: 3
+nc: 3
+
+# ── Data (absolute path on Linux workstation) ─────────────────────────────────
+data_yaml: /media/workstation2/Elements/Sweetpotato/Original_image/New_RG-NIR1/dataset/
+project:   /media/workstation2/Elements/Sweetpotato/Original_image/07082026/runs
+name:      yolo26l_ch1_1024_2
+
+# ── Training ──────────────────────────────────────────────────────────────────
+task:    segment
+mode:    train
+epochs:  150
+batch:   16
+imgsz:   1024
+workers: 8
+seed:    0
+deterministic: true
+amp:     true
+fraction: 1.0
+profile: false
+freeze:  null
+multi_scale: 0.0
+compile: false
+
+# ── Scheduler / optimizer ─────────────────────────────────────────────────────
+optimizer:     auto
+lr0:           0.01
+lrf:           0.01
+momentum:      0.937
+weight_decay:  0.0005
+warmup_epochs: 3.0
+warmup_momentum: 0.8
+warmup_bias_lr: 0.1
+cos_lr:        false
+nbs:           64
+
+# ── Loss ──────────────────────────────────────────────────────────────────────
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+# ── Mask ──────────────────────────────────────────────────────────────────────
+overlap_mask: true
+mask_ratio:   4
+
+# ── Val / NMS ─────────────────────────────────────────────────────────────────
+val:      true
+split:    val
+iou:      0.7
+conf:     null
+max_det:  300
+save_json: false
+
+# ── Save ──────────────────────────────────────────────────────────────────────
+save:        true
+save_period: -1
+exist_ok:    false
+plots:       true
+
+# ── Patience / stopping ───────────────────────────────────────────────────────
+patience:     100
+close_mosaic: 10
+
+# ── Augmentation ──────────────────────────────────────────────────────────────
+hsv_h:      0.015
+hsv_s:      0.7
+hsv_v:      0.4
+degrees:    0.0
+translate:  0.1
+scale:      0.5
+shear:      0.0
+perspective: 0.0
+flipud:     0.0
+fliplr:     0.5
+bgr:        0.0
+mosaic:     1.0
+mixup:      0.0
+cutmix:     0.0
+copy_paste: 0.0
+copy_paste_mode: flip
+auto_augment: randaugment
+erasing:    0.4
+
+# ── Misc (YOLO26 full config) ─────────────────────────────────────────────────
+dropout:      0.0
+single_cls:   false
+rect:         false
+resume:       false
+pretrained:   true
+verbose:      true
+cache:        false
+device:       ''
+agnostic_nms: false
+classes:      null
+retina_masks: false
+distill_model: null
+dis:           6.0
+cls_pw:        0.0
+pose:          12.0
+kobj:          1.0
+rle:           1.0
+angle:         1.0
