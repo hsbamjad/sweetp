@@ -39,8 +39,17 @@ BAND_COMBO = "R_G_NIR1"
 OUTPUT_PATH = r"runs/prediction_output.jpg"
 
 # Inference settings
-CONF_THRESH = 0.25
-IOU_THRESH  = 0.5
+CONF_THRESH = 0.25    # minimum confidence to show a detection
+IOU_THRESH  = 0.5     # NMS IOU — see NMS_MODE below
+
+# NMS mode — controls how aggressively overlapping detections are suppressed.
+# Duplicate boxes on the same potato = lower NMS_MODE value.
+#
+#   "strict"  → IOU=0.30  aggressive NMS, keeps only the best box per instance ✓ use this to fix doubles
+#   "lenient" → IOU=0.70  permissive NMS, allows more overlapping boxes
+#   "custom"  → uses NMS_IOU_CUSTOM below
+NMS_MODE       = "strict"   # "strict" | "lenient" | "custom"
+NMS_IOU_CUSTOM = 0.50       # only used when NMS_MODE = "custom"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -249,14 +258,22 @@ def main():
     if not model_path.exists():
         sys.exit(f"ERROR: model not found → {model_path.resolve()}")
 
+    # ── resolve NMS IOU from mode ─────────────────────────────────────────────
+    nms_map = {"strict": 0.30, "lenient": 0.70, "custom": NMS_IOU_CUSTOM}
+    mode = NMS_MODE.strip().lower()
+    if mode not in nms_map:
+        sys.exit(f'ERROR: NMS_MODE must be "strict", "lenient", or "custom" — got "{mode}"')
+    nms_iou = nms_map[mode]
+    print(f"  NMS mode   : {mode}  (iou={nms_iou})")
+
     print("  Loading model …")
     model = YOLO(str(model_path))
 
     print("  Running inference …\n")
     results = model.predict(
-        source    = input_stack,    # numpy array (H, W, 3)
+        source    = input_stack,
         conf      = CONF_THRESH,
-        iou       = IOU_THRESH,
+        iou       = nms_iou,
         verbose   = False,
         save      = False,
     )
