@@ -296,7 +296,7 @@ def build_dataset(all_entries, combo_name, channels,
         f"# Sweet potato dataset — {combo_name}\n"
         f"# Generated from 2024+2026 merged data\n"
         f"# IMPORTANT: test/ is LOCKED — only use for final paper numbers\n"
-        f"path: .   # relative to this file's location — works on any machine\n"
+        f"path: {combo_dir.resolve().as_posix()}\n"
         f"train: train/images\n"
         f"val:   valid/images\n"
         f"test:  test/images\n\n"
