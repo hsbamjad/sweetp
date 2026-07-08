@@ -1,0 +1,55 @@
+# Model 8 — R+G+NIR2 (normalized), Large model, fine-tuned from 2024 checkpoint
+# Mirrors Model 7 but uses NIR2 instead of NIR1 as the third band.
+#
+# NIR2 normalization is applied in prepare_dataset.py (cv2.NORM_MINMAX to 0-255)
+# so updated_processed_data/R_G_NIR2/ already contains normalized NIR2 images.
+# No separate data preparation step needed.
+#
+# Checkpoint: bestSNIR2_grade.pt (~92MB, Large YOLOv8-seg, trained by 2024 student on RGNIR2)
+
+experiment_name: model8_rg_nir2norm_large_finetune
+model_base: 2024/DetectModels/RGNIR2/bestSNIR2_grade.pt
+model_size: l
+n_channels: 3
+nc: 3
+
+data_yaml: updated_processed_data/R_G_NIR2/data.yaml
+project:   runs
+
+# Training
+epochs: 150
+batch:  12
+imgsz:  640
+workers: 8
+
+# Fine-tune LR — lower than scratch to preserve pretrained weights
+lr0:           0.001
+lrf:           0.01
+momentum:      0.937
+weight_decay:  0.0005
+warmup_epochs: 2.0
+
+# Loss
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+# Augmentation
+hsv_h:     0.015
+hsv_s:     0.7
+hsv_v:     0.4
+degrees:   15.0
+translate: 0.1
+scale:     0.5
+flipud:    0.5
+fliplr:    0.5
+mosaic:    1.0
+mixup:     0.1
+
+# Class imbalance
+copy_paste: 0.3
+
+dropout:      0.1
+close_mosaic: 10
+patience:     50
+save_period:  10
