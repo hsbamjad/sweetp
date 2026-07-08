@@ -121,6 +121,18 @@ def evaluate_model(run_name, data_yaml, out_root):
         print(f"  [SKIP] {run_name} — data.yaml not found: {data_path}")
         return None
 
+    # Pre-check for custom architecture weights (model3/model5 use custom_modules)
+    # These cannot be loaded without the original custom code — skip cleanly.
+    try:
+        import torch
+        meta = torch.load(str(weights), map_location="cpu", weights_only=False)
+        reqs = meta.get("train_args", {}).get("requirements", []) if isinstance(meta, dict) else []
+        if any("custom" in str(r).lower() for r in reqs):
+            print(f"  [SKIP] {run_name} — requires custom_modules (non-standard architecture)")
+            return None
+    except Exception:
+        pass   # if we can't inspect, just try loading normally
+
     print(f"\n  Evaluating: {run_name}")
     print(f"    weights  : {weights}")
     print(f"    data     : {data_path}")
@@ -130,14 +142,17 @@ def evaluate_model(run_name, data_yaml, out_root):
         results = model.val(
             data      = str(data_path),
             split     = "test",
-            project   = str(out_root),
+            project   = str(out_root.resolve()),  # absolute path avoids YOLO doubling runs/segment/
             name      = run_name,
-            plots     = True,
+            plots     = False,   # disabled — YOLO path bug causes FileNotFoundError
             verbose   = False,
             conf      = CONF,
             iou       = IOU,
             save_json = False,
         )
+    except ModuleNotFoundError as e:
+        print(f"  [SKIP] {run_name} — custom architecture: {e}")
+        return None
     except Exception as e:
         print(f"  [ERROR] {run_name}: {e}")
         return None
