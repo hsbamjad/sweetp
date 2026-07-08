@@ -6,8 +6,8 @@ model_size: m
 n_channels: 3
 nc: 3
 
-data_yaml: S:/MSU_Research/sweetpotatoes/processed_data/R_NIR1_NIR2/data.yaml
-project:   S:/MSU_Research/sweetpotatoes/runs
+data_yaml: processed_data/R_NIR1_NIR2/data.yaml
+project:   runs
 
 enable_spd:        true
 enable_nir_fusion: false

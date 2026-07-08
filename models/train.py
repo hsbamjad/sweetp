@@ -120,6 +120,20 @@ def main():
 
     cfg = load_config(args.config)
 
+    # ── Resolve relative paths from project root ─────────────────────────────
+    # Allows configs to use 'processed_data/...' instead of absolute paths,
+    # making them portable across machines.
+    PROJECT_ROOT = Path(__file__).parent.parent
+
+    data_yaml = cfg["data_yaml"]
+    if not Path(data_yaml).is_absolute():
+        cfg["data_yaml"] = str(PROJECT_ROOT / data_yaml)
+
+    project = cfg.get("project", "runs")
+    if not Path(project).is_absolute():
+        cfg["project"] = str(PROJECT_ROOT / project)
+    # ─────────────────────────────────────────────────────────────────────────
+
     if args.name is None:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         args.name = f"{cfg.get('experiment_name', 'exp')}_{ts}"

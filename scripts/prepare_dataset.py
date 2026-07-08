@@ -289,12 +289,12 @@ def build_dataset(all_entries, combo_name, channels,
         ok_total += ok
         skip_total += skip
 
-    # Write data.yaml — includes test path for final evaluation
+    # Write data.yaml — uses relative path so it works on any machine
     yaml_content = (
         f"# Sweet potato dataset — {combo_name}\n"
         f"# Generated from 2024+2026 merged data\n"
         f"# IMPORTANT: test/ is LOCKED — only use for final paper numbers\n"
-        f"path: {combo_dir.as_posix()}\n"
+        f"path: .   # relative to this file's location — works on any machine\n"
         f"train: train/images\n"
         f"val:   valid/images\n"
         f"test:  test/images\n\n"
