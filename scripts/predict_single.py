@@ -75,17 +75,24 @@ MASK_ALPHA = 0.4   # transparency of filled mask overlay
 
 # ─── compose multispectral image ──────────────────────────────────────────────
 
-def load_gray(path, normalize=False, target_size=None):
-    """Load a grayscale image; optionally normalize and resize to target (W, H)."""
+def load_gray(path, normalize=False):
+    """Load a grayscale image; optionally apply min-max normalization."""
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
         sys.exit(f"ERROR: cannot read image → {path}")
     if normalize:
         img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)
-    if target_size is not None and (img.shape[1], img.shape[0]) != target_size:
-        print(f"    Resizing NIR {img.shape[:2][::-1]} → {target_size} to match RGB")
-        img = cv2.resize(img, target_size, interpolation=cv2.INTER_LINEAR)
     return img.astype(np.uint8)
+
+
+def match_size(img, target_hw):
+    """Resize img (H,W) to target_hw=(H,W) if needed."""
+    th, tw = target_hw
+    if img.shape[0] != th or img.shape[1] != tw:
+        print(f"    Resizing NIR {img.shape[1]}×{img.shape[0]} → {tw}×{th}")
+        img = cv2.resize(img, (tw, th), interpolation=cv2.INTER_LINEAR)
+    return img
+
 
 
 def compose_input(rgb_path, nir1_path, nir2_path, band_combo):
@@ -106,8 +113,7 @@ def compose_input(rgb_path, nir1_path, nir2_path, band_combo):
         sys.exit(f"ERROR: cannot read RGB image → {rgb_path}")
     rgb = cv2.cvtColor(rgb_bgr, cv2.COLOR_BGR2RGB)
     R, G, B = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
-    target_size = (rgb.shape[1], rgb.shape[0])   # (W, H) for cv2.resize
-    print(f"    RGB size : {rgb.shape[1]}×{rgb.shape[0]}")
+    print(f"    RGB size : {R.shape[1]}×{R.shape[0]}")
 
     if combo == "RGB":
         stack = np.stack([R, G, B], axis=-1)
@@ -115,27 +121,28 @@ def compose_input(rgb_path, nir1_path, nir2_path, band_combo):
     elif combo == "R_G_NIR1":
         if nir1_path is None:
             sys.exit("ERROR: NIR1_PATH is required for R_G_NIR1")
-        nir1 = load_gray(nir1_path, normalize=False, target_size=target_size)
+        nir1 = match_size(load_gray(nir1_path), R.shape)
         stack = np.stack([R, G, nir1], axis=-1)
 
     elif combo == "R_G_NIR2":
         if nir2_path is None:
             sys.exit("ERROR: NIR2_PATH is required for R_G_NIR2")
-        nir2 = load_gray(nir2_path, normalize=True, target_size=target_size)
+        nir2 = match_size(load_gray(nir2_path, normalize=True), R.shape)
         stack = np.stack([R, G, nir2], axis=-1)
 
     elif combo == "R_NIR1_NIR2":
         if nir1_path is None or nir2_path is None:
             sys.exit("ERROR: both NIR1_PATH and NIR2_PATH are required for R_NIR1_NIR2")
-        nir1 = load_gray(nir1_path, normalize=False, target_size=target_size)
-        nir2 = load_gray(nir2_path, normalize=True,  target_size=target_size)
+        nir1 = match_size(load_gray(nir1_path), R.shape)
+        nir2 = match_size(load_gray(nir2_path, normalize=True), R.shape)
         stack = np.stack([R, nir1, nir2], axis=-1)
 
     else:
         sys.exit(f"ERROR: unknown BAND_COMBO '{band_combo}'. "
                  "Choose: RGB | R_G_NIR1 | R_G_NIR2 | R_NIR1_NIR2")
 
-    return stack.astype(np.uint8), rgb_bgr   # input stack + original BGR for display
+    return stack.astype(np.uint8), rgb_bgr
+
 
 
 # ─── draw predictions ─────────────────────────────────────────────────────────
