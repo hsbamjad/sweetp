@@ -151,18 +151,27 @@ def main():
     out(f"  {'mAP @ 0.50:0.95':<28}  {fmt(box.map):>8}  {fmt(seg.map if seg else None):>8}")
     out(f"  {'Precision (mean)':<28}  {fmt(box.mp):>8}  {fmt(seg.mp if seg else None):>8}")
     out(f"  {'Recall    (mean)':<28}  {fmt(box.mr):>8}  {fmt(seg.mr if seg else None):>8}")
+    # Mean F1
+    def mean_f1(p, r):
+        return fmt(2*p*r/(p+r)) if p and r and (p+r) > 0 else "   —  "
+    out(f"  {'F1        (mean)':<28}  {mean_f1(box.mp, box.mr):>8}  {mean_f1(seg.mp, seg.mr) if seg else '   —  ':>8}")
     out()
 
     out("═" * 62)
     out("  PER-CLASS — BOUNDING BOX")
     out("═" * 62)
-    out(f"  {'Class':<22}  {'P':>7}  {'R':>7}  {'mAP50':>7}  {'mAP50-95':>9}")
-    out(f"  {'-'*22}  {'-'*7}  {'-'*7}  {'-'*7}  {'-'*9}")
+    out(f"  {'Class':<22}  {'P':>7}  {'R':>7}  {'F1':>7}  {'mAP50':>7}  {'mAP50-95':>9}")
+    out(f"  {'-'*22}  {'-'*7}  {'-'*7}  {'-'*7}  {'-'*7}  {'-'*9}")
+    f1_box = []
     for i, name in enumerate(CLASS_NAMES):
-        out(f"  {name:<22}  {fmt(prec_box[i]):>7}  {fmt(rec_box[i]):>7}  "
+        p, r = prec_box[i], rec_box[i]
+        f1v = 2*p*r/(p+r) if p and r and (p+r) > 0 else None
+        f1_box.append(f1v)
+        out(f"  {name:<22}  {fmt(p):>7}  {fmt(r):>7}  {fmt(f1v):>7}  "
             f"{fmt(ap50_box[i]):>7}  {fmt(ap_box[i]):>9}")
-    out(f"  {'─'*22}  {'─'*7}  {'─'*7}  {'─'*7}  {'─'*9}")
-    out(f"  {'ALL (mean)':<22}  {fmt(box.mp):>7}  {fmt(box.mr):>7}  "
+    out(f"  {'─'*22}  {'─'*7}  {'─'*7}  {'─'*7}  {'─'*7}  {'─'*9}")
+    mean_f1_box = sum(v for v in f1_box if v) / max(1, sum(1 for v in f1_box if v))
+    out(f"  {'ALL (mean)':<22}  {fmt(box.mp):>7}  {fmt(box.mr):>7}  {fmt(mean_f1_box):>7}  "
         f"{fmt(box.map50):>7}  {fmt(box.map):>9}")
     out()
 
@@ -170,13 +179,18 @@ def main():
         out("═" * 62)
         out("  PER-CLASS — SEGMENTATION MASK")
         out("═" * 62)
-        out(f"  {'Class':<22}  {'P':>7}  {'R':>7}  {'mAP50':>7}  {'mAP50-95':>9}")
-        out(f"  {'-'*22}  {'-'*7}  {'-'*7}  {'-'*7}  {'-'*9}")
+        out(f"  {'Class':<22}  {'P':>7}  {'R':>7}  {'F1':>7}  {'mAP50':>7}  {'mAP50-95':>9}")
+        out(f"  {'-'*22}  {'-'*7}  {'-'*7}  {'-'*7}  {'-'*7}  {'-'*9}")
+        f1_seg = []
         for i, name in enumerate(CLASS_NAMES):
-            out(f"  {name:<22}  {fmt(prec_seg[i]):>7}  {fmt(rec_seg[i]):>7}  "
+            p, r = prec_seg[i], rec_seg[i]
+            f1v = 2*p*r/(p+r) if p and r and (p+r) > 0 else None
+            f1_seg.append(f1v)
+            out(f"  {name:<22}  {fmt(p):>7}  {fmt(r):>7}  {fmt(f1v):>7}  "
                 f"{fmt(ap50_seg[i]):>7}  {fmt(ap_seg[i]):>9}")
-        out(f"  {'─'*22}  {'─'*7}  {'─'*7}  {'─'*7}  {'─'*9}")
-        out(f"  {'ALL (mean)':<22}  {fmt(seg.mp):>7}  {fmt(seg.mr):>7}  "
+        out(f"  {'─'*22}  {'─'*7}  {'─'*7}  {'─'*7}  {'─'*7}  {'─'*9}")
+        mean_f1_seg = sum(v for v in f1_seg if v) / max(1, sum(1 for v in f1_seg if v))
+        out(f"  {'ALL (mean)':<22}  {fmt(seg.mp):>7}  {fmt(seg.mr):>7}  {fmt(mean_f1_seg):>7}  "
             f"{fmt(seg.map50):>7}  {fmt(seg.map):>9}")
         out()
 
