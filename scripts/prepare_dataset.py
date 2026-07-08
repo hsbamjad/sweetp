@@ -22,9 +22,11 @@ Split strategy:  stratified BY SESSION (not by frame) to prevent data leakage.
   - Test set is LOCKED — never seen during training or model selection.
 
 Usage:
-    python scripts/prepare_dataset.py               # 2024 only
-    python scripts/prepare_dataset.py --include2026  # merge 2024 + 2026
-    python scripts/prepare_dataset.py --dryrun       # count only, write nothing
+    python scripts/prepare_dataset.py                                   # 2024 only  → processed_data/
+    python scripts/prepare_dataset.py --include2026                     # merge 2024+2026 → processed_data/
+    python scripts/prepare_dataset.py --output-dir processed_data_2024only          # explicit output dir
+    python scripts/prepare_dataset.py --include2026 --output-dir processed_data_combined
+    python scripts/prepare_dataset.py --dryrun                          # count only, write nothing
 """
 
 import argparse
@@ -314,6 +316,9 @@ def main():
     parser = argparse.ArgumentParser(description="Prepare sweet potato multispectral dataset")
     parser.add_argument("--include2026",  action="store_true",
                         help="Merge 2026 data with 2024")
+    parser.add_argument("--output-dir", type=str, default=None,
+                        help="Output directory (default: processed_data/ or processed_data_2024only/ "
+                             "when not using --include2026 and a custom dir isn't set)")
     parser.add_argument("--val_split",  type=float, default=0.15,
                         help="Val fraction per session split (default 0.15)")
     parser.add_argument("--test_split", type=float, default=0.15,
@@ -324,6 +329,12 @@ def main():
     parser.add_argument("--dryrun",      action="store_true",
                         help="Count and verify splits only — write nothing")
     args = parser.parse_args()
+
+    # ── Resolve output directory ──────────────────────────────────────────────
+    if args.output_dir:
+        out_dir = PROJECT_ROOT / args.output_dir
+    else:
+        out_dir = OUTPUT_DIR   # default: processed_data/
 
     print("\n" + "=" * 60)
     print("  SWEET POTATO DATASET PREPARATION")
@@ -368,7 +379,7 @@ def main():
             val_fraction  = args.val_split,
             test_fraction = args.test_split,
             seed          = args.seed,
-            output_dir    = OUTPUT_DIR,
+            output_dir    = out_dir,
             dryrun        = args.dryrun,
         )
 
@@ -376,7 +387,7 @@ def main():
         print("\n" + "=" * 60)
         print("  DONE")
         print("=" * 60)
-        print(f"\n  Datasets written to: {OUTPUT_DIR}")
+        print(f"\n  Datasets written to: {out_dir}")
         print("  Next: python models/train.py --config configs/model1/rgb_baseline.yaml --name model1_rgb")
     else:
         print("\n  Dry run complete. Run without --dryrun to write files.")
