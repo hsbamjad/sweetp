@@ -76,10 +76,14 @@ MASK_ALPHA = 0.4   # transparency of filled mask overlay
 # ─── compose multispectral image ──────────────────────────────────────────────
 
 def load_gray(path, normalize=False):
-    """Load a grayscale image; optionally apply min-max normalization."""
+    """Load a grayscale image; optionally apply min-max normalization.
+    Handles images stored as (H, W, 1) by squeezing to (H, W).
+    """
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
         sys.exit(f"ERROR: cannot read image → {path}")
+    if img.ndim == 3:
+        img = img[:, :, 0]   # (H, W, 1) → (H, W)
     if normalize:
         img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)
     return img.astype(np.uint8)
