@@ -12,7 +12,7 @@ Outputs
 """
 
 # ═══════════════════════════════════════════════════════════════
-#  CONFIG — edit these two lines only
+#  CONFIG — edit these lines
 # ═══════════════════════════════════════════════════════════════
 
 MODEL_PATH = r"runs/model6_rg_nir1/weights/best.pt"
@@ -20,6 +20,10 @@ MODEL_PATH = r"runs/model6_rg_nir1/weights/best.pt"
 TEST_DATA  = r"updated_processed_data/R_G_NIR1/data.yaml"
 
 SPLIT      = "test"   # "test" | "val" | "train"  (NOT "valid" — use "val")
+
+# Set True to evaluate on train + val + test combined in one pass.
+# When True, SPLIT is ignored.
+COMBINE_SPLITS = False
 
 RUN_NAME   = "eval_model6_test"     # output folder name under runs/
 
@@ -69,15 +73,59 @@ def main():
     sep()
     print(f"\n  Model : {MODEL_PATH}")
     print(f"  Data  : {TEST_DATA}")
-    # ── validate + normalise split name ─────────────────────────────────────
+
+    # ── validate / normalise split ────────────────────────────────────────────
     split = SPLIT.strip().lower()
     if split == "valid":
-        split = "val"   # YOLO uses "val" not "valid"
+        split = "val"
     if split not in ("train", "val", "test"):
         sys.exit(f'ERROR: SPLIT must be "train", "val", or "test" — got "{split}"')
 
-    note = "  ⚠  LOCKED — final paper numbers only" if split == "test" else ""
-    print(f"  Split : {split}{note}")
+    data_path = Path(TEST_DATA)
+    if not data_path.exists():
+        sys.exit(f"ERROR: data.yaml not found → {data_path.resolve()}")
+
+    # ── combine splits if requested ───────────────────────────────────────────
+    import tempfile, yaml as _yaml
+    _tmp_yaml = None
+
+    if COMBINE_SPLITS:
+        print("  Split : train + val + test  (COMBINED)")
+        try:
+            with open(data_path, "r") as f:
+                d = _yaml.safe_load(f)
+        except ImportError:
+            sys.exit("ERROR: pyyaml not installed — run: pip install pyyaml")
+
+        base = Path(d.get("path", data_path.parent)).resolve()
+        # collect all image directories
+        all_dirs = []
+        for key in ("train", "val", "test"):
+            v = d.get(key)
+            if v:
+                dirs = v if isinstance(v, list) else [v]
+                all_dirs += [str(base / x) for x in dirs]
+
+        # write temp data.yaml with 'test' pointing to all dirs
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix="_combined.yaml", delete=False, encoding="utf-8")
+        tmp.write(f"path: {base.as_posix()}\n")
+        tmp.write(f"train: {d.get('train', 'train/images')}\n")
+        tmp.write(f"val:   {d.get('val',   'valid/images')}\n")
+        tmp.write("test:\n")
+        for p in all_dirs:
+            tmp.write(f"  - {Path(p).as_posix()}\n")
+        tmp.write(f"nc: {d.get('nc', 3)}\n")
+        tmp.write(f"names: {d.get('names', [])}\n")
+        tmp.close()
+        _tmp_yaml = tmp.name
+        data_path = Path(_tmp_yaml)
+        split = "test"   # combined goes through the test split key
+        print(f"  Combined dirs : {len(all_dirs)} image folders")
+    else:
+        note = "  ⚠  LOCKED — final paper numbers only" if split == "test" else ""
+        print(f"  Split : {split}{note}")
+
     print(f"  Output: runs/{RUN_NAME}\n")
 
     # ── load model ────────────────────────────────────────────────────────────
@@ -85,25 +133,26 @@ def main():
     if not model_path.exists():
         sys.exit(f"ERROR: model not found → {model_path.resolve()}")
 
-    data_path = Path(TEST_DATA)
-    if not data_path.exists():
-        sys.exit(f"ERROR: data.yaml not found → {data_path.resolve()}")
-
     model = YOLO(str(model_path))
 
-    # ── run validation on test split ──────────────────────────────────────────
-    print(f"Running evaluation on {split} split …\n")
-    results = model.val(
-        data      = str(data_path),
-        split     = split,
-        project   = "runs",
-        name      = RUN_NAME,
-        plots     = True,
-        verbose   = False,
-        conf      = 0.25,
-        iou       = 0.5,
-        save_json = False,
-    )
+    # ── run validation ────────────────────────────────────────────────────────
+    label = "combined (train+val+test)" if COMBINE_SPLITS else split
+    print(f"Running evaluation on {label} …\n")
+    try:
+        results = model.val(
+            data      = str(data_path),
+            split     = split,
+            project   = "runs",
+            name      = RUN_NAME,
+            plots     = True,
+            verbose   = False,
+            conf      = 0.25,
+            iou       = 0.5,
+            save_json = False,
+        )
+    finally:
+        if _tmp_yaml:          # always delete temp yaml
+            Path(_tmp_yaml).unlink(missing_ok=True)
 
     # ── extract metrics ───────────────────────────────────────────────────────
     box = results.box
