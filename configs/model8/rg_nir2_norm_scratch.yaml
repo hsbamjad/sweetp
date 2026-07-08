@@ -1,0 +1,50 @@
+# Model 8b — R+G+NIR2 (normalized), Medium, trained from scratch
+# Mirrors Model 6 (R+G+NIR1 scratch) but uses NIR2 as the third band.
+# NIR2 is already min-max normalized in prepare_dataset.py.
+
+experiment_name: model8b_rg_nir2norm_scratch
+model_base: yolo26m-seg.pt
+model_size: m
+n_channels: 3
+nc: 3
+
+data_yaml: updated_processed_data/R_G_NIR2/data.yaml
+project:   runs
+
+# Training
+epochs: 150
+batch:  16
+imgsz:  640
+workers: 8
+
+# Learning rate (scratch)
+lr0:           0.01
+lrf:           0.01
+momentum:      0.937
+weight_decay:  0.0005
+warmup_epochs: 3.0
+
+# Loss
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+# Augmentation
+hsv_h:     0.015
+hsv_s:     0.7
+hsv_v:     0.4
+degrees:   15.0
+translate: 0.1
+scale:     0.5
+flipud:    0.5
+fliplr:    0.5
+mosaic:    1.0
+mixup:     0.1
+
+# Class imbalance
+copy_paste: 0.3
+
+dropout:      0.1
+close_mosaic: 10
+patience:     50
+save_period:  10
