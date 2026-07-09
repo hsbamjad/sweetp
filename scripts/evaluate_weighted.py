@@ -1,4 +1,4 @@
-﻿"""
+"""
 evaluate_weighted.py — Sweet Potato Model Evaluation with Post-hoc Class Weighting
 
 Runs inference on every image in the chosen split, applies a per-class confidence
@@ -115,9 +115,13 @@ def collect_images(data_yaml_path, split):
 
 def parse_label_file(lbl_path, img_w, img_h):
     """
-    Parse a YOLO-format label file.
-    Returns list of dicts: {cls, x1, y1, x2, y2}  (absolute pixel coords).
-    Supports both bounding-box lines (5 values) and segmentation lines (5+ values).
+    Parse a YOLO-format label file — handles BOTH formats:
+
+    Bounding box  (5 values):  cls  cx  cy  w  h   (all normalised)
+    Segmentation  (>5 values): cls  x1 y1 x2 y2 x3 y3 ...  (polygon, normalised)
+
+    For segmentation lines the axis-aligned bounding box of the polygon is used,
+    which is what model.predict() returns as boxes.xyxy for comparison.
     """
     gts = []
     if not lbl_path.exists():
@@ -126,12 +130,23 @@ def parse_label_file(lbl_path, img_w, img_h):
         parts = line.split()
         if len(parts) < 5:
             continue
-        cls = int(parts[0])
-        cx, cy, w, h = map(float, parts[1:5])
-        x1 = (cx - w / 2) * img_w
-        y1 = (cy - h / 2) * img_h
-        x2 = (cx + w / 2) * img_w
-        y2 = (cy + h / 2) * img_h
+        cls    = int(parts[0])
+        coords = list(map(float, parts[1:]))
+
+        if len(coords) == 4:
+            # Standard bbox: cx cy w h  (normalised)
+            cx, cy, w, h = coords
+            x1 = (cx - w / 2) * img_w
+            y1 = (cy - h / 2) * img_h
+            x2 = (cx + w / 2) * img_w
+            y2 = (cy + h / 2) * img_h
+        else:
+            # Segmentation polygon: x1 y1 x2 y2 x3 y3 ...  (normalised)
+            # Compute the axis-aligned bounding box of all vertices
+            xs = [coords[i] * img_w for i in range(0, len(coords), 2)]
+            ys = [coords[i] * img_h for i in range(1, len(coords), 2)]
+            x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
+
         gts.append({"cls": cls, "x1": x1, "y1": y1, "x2": x2, "y2": y2})
     return gts
 
